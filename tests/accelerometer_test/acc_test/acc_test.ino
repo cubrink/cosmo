@@ -14,6 +14,9 @@ const int JERK_COOLDOWN = 3;
 float x_curr, y_curr, z_curr;
 float x_prev, y_prev, z_prev;
 
+
+double x = 0;
+
 float roll, pitch;
 
 void setup() {
@@ -43,10 +46,12 @@ void loop() {
   // put your main code here, to run repeatedly:
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
-  
-  x_curr = a.acceleration.x / 256;
-  y_curr = a.acceleration.y / 256;
-  z_curr = a.acceleration.z / 256;
+
+  roll = atan2(a.acceleration.y, a.acceleration.z);
+  Serial.println(roll); 
+//  x_curr = a.acceleration.x / 256;
+//  y_curr = a.acceleration.y / 256;
+//  z_curr = a.acceleration.z / 256;
 //  Serial.print("Acceleration X:");
 //  Serial.print(x_curr);
 //  Serial.print("Acceleration y:");
@@ -55,11 +60,12 @@ void loop() {
 //  Serial.print(z_curr);
 //  Serial.println("");
 
-  pitch = atan(y_curr / sqrt(pow(x_curr, 2) + pow(z_curr, 2))) * 180 / PI;
-  roll = atan(-1 * x_curr / sqrt(pow(y_curr, 2) + pow(z_curr, 2))) * 180 / PI;
-  Serial.print("Roll x:");
-  Serial.print(roll);
-  Serial.print("Pitch y:");
-  Serial.print(pitch);
-  Serial.println("");  
+
+
+//  pitch = atan(y_curr / sqrt(pow(x_curr, 2) + pow(z_curr, 2))) * 180 / PI;
+//  roll = atan(-1 * x_curr / sqrt(pow(y_curr, 2) + pow(z_curr, 2))) * 180 / PI;
+//  Serial.print(roll);
+//  Serial.print("\t");
+//  Serial.println(pitch);
+  delay(100);
 }
