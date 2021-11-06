@@ -18,7 +18,7 @@ const int button1 = 36;
 
 
 // REPLACE WITH THE MAC Address of your receiver 
-uint8_t broadcastAddress[] = {0x94, 0xB9, 0x7E, 0xE9, 0x91, 0xBC};
+uint8_t broadcastAddress[] = {0x94, 0xB9, 0x7E, 0xE9, 0xA2, 0xE8};
 
 uint8_t rcvd_data;
 
@@ -51,9 +51,9 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 // Callback when data is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
-  Serial.print("Bytes received: ");
-  Serial.println(len);
   rcvd_data = incomingReadings.buttons;
+  Serial.print("Data received: ");
+  Serial.println(rcvd_data);
 }
  
 void setup() {
