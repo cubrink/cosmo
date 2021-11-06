@@ -28,7 +28,7 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   Serial.print("Data received: ");
   Serial.println(rcvd_data);
   
-  if(rcvd_data & 0b00000001)
+  if((rcvd_data & 0b00000001) && !(rcvd_data & 0b00000010))
   {
     Serial.println("Motor 1 ON");
     digitalWrite(motor1, HIGH);
@@ -38,7 +38,7 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
     Serial.println("Motor 1 OFF");
     digitalWrite(motor1, LOW);
   }
-  if(rcvd_data & 0b00000010)
+  if((rcvd_data & 0b00000010) && !(rcvd_data & 0b00000001))
   {
     Serial.println("Motor 2 ON");
     digitalWrite(motor2, HIGH);
@@ -47,6 +47,17 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   {
     Serial.println("Motor 2 OFF");
     digitalWrite(motor2, LOW);
+  }
+  if(rcvd_data >= 3)
+  {
+    Serial.printlnt("An Error has Occured!");
+    digitalWrite(motor1, LOW);
+    digitalWrite(motor2, LOW);
+    // User must power cycle to reset motors
+    while(true) 
+    {
+      delay(50)
+    }
   }
   
 }
