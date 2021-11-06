@@ -19,7 +19,6 @@ const int button1 = 36;
 
 // REPLACE WITH THE MAC Address of your receiver 
 uint8_t broadcastAddress[] = {0x94, 0xB9, 0x7E, 0xE9, 0xA2, 0xE8};
-//uint8_t broadcastAddress[] = {0x94, 0xB9, 0x7E, 0xE9, 0xA2, 0xE8};
 
 uint8_t rcvd_data;
 
@@ -74,7 +73,7 @@ void setup() {
 
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnDataSent);
+  //esp_now_register_send_cb(OnDataSent);
   
   // Register peer
   esp_now_peer_info_t peerInfo;
@@ -92,16 +91,7 @@ void setup() {
 }
  
 void loop() {
-  outputData.buttons = digitalRead(button1);
-  
-  // Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &outputData, sizeof(outputData));
-   
-  if (result == ESP_OK) {
-    Serial.println("Sent with success");
-  }
-  else {
-    Serial.println("Error sending the data");
-  }
-  delay(10);
+
+  Serial.println("Waiting for Data");
+  delay(1000);
 }
