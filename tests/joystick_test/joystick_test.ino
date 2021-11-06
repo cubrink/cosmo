@@ -8,6 +8,8 @@ void setup() {
 }
 
 void loop() {
+  // analog reads 0-4095
+  // neutral is ~1780
   Serial.print(analogRead(x_value));
   Serial.print("  ");
   Serial.println(analogRead(y_value));

@@ -1,5 +1,9 @@
 #include <esp_now.h>
+#include <WiFi.h>
 #include <Wire.h>
+
+const int motor1 = 12;
+const int motor2 = 14;
 
 // MY MAC Address: 
 // receiver MAC address
@@ -23,11 +27,42 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   rcvd_data = incomingReadings.buttons;
   Serial.print("Data received: ");
   Serial.println(rcvd_data);
+  
+  if(rcvd_data & 0b00000001)
+  {
+    Serial.println("Motor 1 ON");
+    digitalWrite(motor1, HIGH);
+  }
+  else
+  {
+    Serial.println("Motor 1 OFF");
+    digitalWrite(motor1, LOW);
+  }
+  if(rcvd_data & 0b00000010)
+  {
+    Serial.println("Motor 2 ON");
+    digitalWrite(motor2, HIGH);
+  }
+  else
+  {
+    Serial.println("Motor 2 OFF");
+    digitalWrite(motor2, LOW);
+  }
+  
 }
  
 void setup() {
   // Init Serial Monitor
   Serial.begin(115200);
+
+  // Motor output initialization
+  pinMode(motor1, OUTPUT);
+  pinMode(motor2, OUTPUT);
+  digitalWrite(motor1, LOW);
+  digitalWrite(motor2, LOW);
+
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
@@ -54,5 +89,9 @@ void setup() {
 void loop() {
 
   Serial.println("Waiting for Data");
-  delay(1000);
+  delay(2000);
+
+  
+
+  
 }
