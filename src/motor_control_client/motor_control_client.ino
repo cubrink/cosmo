@@ -1,65 +1,74 @@
+/*
+ * File: motor_control_client.ino
+ * Programmer: Jeffrey Phillips
+ * 
+ * This file receives data from another controller to turn on and off
+ * the motors used to turn cosmo
+ * 
+ */
+
+// MY MAC Address:        94:B9:7E:E9:A2:E8
+
 #include <esp_now.h>
 #include <WiFi.h>
 #include <Wire.h>
 
+// Relay pin numbers for powering motors
 const int motor1 = 12;
 const int motor2 = 14;
 
-// MY MAC Address: 
-// receiver MAC address
-uint8_t broadcastAddress[] = {0x94, 0xB9, 0x7E, 0xE9, 0xA2, 0xE8};
-
+// Received data
 uint8_t rcvd_data;
-
-//Structure example to send data
-//Must match the receiver structure
-typedef struct struct_message {
-    uint8_t buttons;
-} struct_message;
-
-// Create a struct_message to hold incoming sensor readings
-struct_message incomingReadings;
-struct_message outputData;
 
 // Callback when data is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
-  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
-  rcvd_data = incomingReadings.buttons;
+  // Receive data and save to rcvd_data
+  memcpy(&rcvd_data, incomingData, sizeof(rcvd_data));
+
+  // debug
   Serial.print("Data received: ");
   Serial.println(rcvd_data);
-  
+
+  // if motor1 = 1 and motor2 = 0
   if((rcvd_data & 0b00000001) && !(rcvd_data & 0b00000010))
   {
+    // turn on motor1
     Serial.println("Motor 1 ON");
     digitalWrite(motor1, HIGH);
   }
   else
   {
+    // turn off motor1
     Serial.println("Motor 1 OFF");
     digitalWrite(motor1, LOW);
   }
+  // if motor2 = 1 and motor1 = 0
   if((rcvd_data & 0b00000010) && !(rcvd_data & 0b00000001))
   {
+    // turn on motor2
     Serial.println("Motor 2 ON");
     digitalWrite(motor2, HIGH);
   }
   else
   {
+    // turn off motor2
     Serial.println("Motor 2 OFF");
     digitalWrite(motor2, LOW);
   }
-  if(rcvd_data >= 3)
+  // if received data is not a value between 0 and 3
+  if(rcvd_data >= 3 || rcvd_data < 0)
   {
-    Serial.printlnt("An Error has Occured!");
+    // turn off both motors
+    Serial.println("An Error has Occured!");
     digitalWrite(motor1, LOW);
     digitalWrite(motor2, LOW);
+    
     // User must power cycle to reset motors
     while(true) 
     {
-      delay(50)
+      delay(50);
     }
   }
-  
 }
  
 void setup() {
@@ -78,18 +87,6 @@ void setup() {
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
-    return;
-  }
-  
-  // Register peer
-  esp_now_peer_info_t peerInfo;
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.channel = 0;  
-  peerInfo.encrypt = false;
-  
-  // Add peer        
-  if (esp_now_add_peer(&peerInfo) != ESP_OK){
-    Serial.println("Failed to add peer");
     return;
   }
   
