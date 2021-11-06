@@ -1,5 +1,11 @@
 #include <BleGamepad.h>    // https://github.com/lemmingDev/ESP32-BLE-Gamepad
 
+typedef struct analog_state_t {
+  uint16_t _inline;
+  uint16_t _roll;
+  uint16_t _pitch;
+};
+
 const int e_stop = 14;         // Red
 
 const int NUM_CONTROLLER_BUTTONS = 8;
@@ -15,10 +21,14 @@ const int speed_down = 2;      // Green left
 const int time_speed_up = 26;  // Blue right
 const int time_speed_down = 27;// Blue left
 
-const int joy_left_unknown = 35;
-const int joy_left_forward_backward = 34;
-const int joy_right_roll = 39;
-const int joy_right_pitch = 36; 
+const int joy_left_unused = 34;
+const int joy_left_inline = 35;
+const int joy_right_roll = 36;
+const int joy_right_pitch = 39; 
+
+// Analog sticks normally idles at about 1950
+const uint16_t joy_deadzone_min = 1900;
+const uint16_t joy_deadzone_max = 2000;
 
 const int led_connection_status = 18;
 const int led_move_left = 5;
@@ -28,12 +38,13 @@ const int led_move_right = 19;
 uint8_t curr_state;
 uint8_t prev_state;
 uint8_t changed;
+analog_state_t analog_state;
 
 bool emergency;
-
 BleGamepad gamepad;
 
 uint8_t read_buttons();
+analog_state_t read_analogs();
 void update_state();
 
 
@@ -52,8 +63,8 @@ void setup() {
   pinMode(speed_down, INPUT);
   pinMode(time_speed_up, INPUT);
   pinMode(time_speed_down, INPUT);
-  pinMode(joy_left_unknown, INPUT);
-  pinMode(joy_left_forward_backward, INPUT);
+  pinMode(joy_left_unused, INPUT);
+  pinMode(joy_left_inline, INPUT);
   pinMode(joy_right_roll, INPUT);
   pinMode(joy_right_pitch, INPUT);
 
@@ -64,7 +75,8 @@ void setup() {
   digitalWrite(led_move_left, LOW);
   digitalWrite(led_move_right, LOW);
 
-  // Initialize button states
+  // Initialize button and analog states
+  analog_state = {0, 0, 0};
   curr_state = 0;
   prev_state = 0;
   changed = 0;
@@ -79,6 +91,7 @@ void loop() {
                                      // If the circuit becomes damaged, a low value is read
                                      // which will flag an emergency
   update_state();
+  Serial.println(analog_state._roll);
   if (!emergency && gamepad.isConnected()) {
       // Skip while gamepad is not connected
       for (int i = 0; i < NUM_CONTROLLER_BUTTONS; i++) {
@@ -123,7 +136,15 @@ uint8_t read_buttons() {
 
 void update_state() {
   // Returns an 8 bit value where each bit represents if the state of the button has changed.
+  read_analogs();
   prev_state = curr_state;
   curr_state = read_buttons();
   changed = prev_state ^ curr_state; // XOR to check if values have changed.
 };
+
+analog_state_t read_analogs() {
+  // Read roll, pitch and inline movement from analog sticks.
+  analog_state._inline = analogRead(joy_left_inline);
+  analog_state._roll = analogRead(joy_right_roll);
+  analog_state._pitch = analogRead(joy_right_pitch);
+}
