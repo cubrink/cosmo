@@ -27,3 +27,6 @@ https://www.megunolink.com/articles/wireless/talk-esp32-over-wifi/
 Sharing Bluetooth and wifi:
 https://esp32.com/viewtopic.php?f=13&t=6707&start=30
 https://www.youtube.com/watch?v=-N52wL8xQzM
+
+Test gamepad inputs:
+https://gamepad-tester.com/
