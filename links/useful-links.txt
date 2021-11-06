@@ -1,0 +1,29 @@
+https://github.com/lemmingDev/ESP32-BLE-Gamepad
+https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+
+Track orientation: https://www.youtube.com/watch?v=KMhbV1p3MWk
+
+Controller: (We need a 32U4 based board!)
+HID controller (wired): https://www.youtube.com/watch?v=bDikklGx-tM
+https://www.reddit.com/r/arduino/comments/7f1cnl/hid_bluetooth_game_controller_project/
+
+https://hackaday.com/2020/02/13/emulating-a-bluetooth-keyboard-with-the-esp32/
+
+Using an UNO (avoid this if possible): https://www.youtube.com/watch?v=EkzCk_oesJk
+
+https://www.instructables.com/Create-a-Joystick-Using-the-Arduino-Joystick-Libra/
+
+https://www.adafruit.com/product/1327
+
+Using ESP32 in arduino IDE
+https://arduino.stackexchange.com/questions/76847/how-do-i-set-up-an-arduino-to-be-a-wireless-hid
+
+Example of project switching between both?
+https://github.com/zs6buj/MavlinkToPassthru
+
+ESP wifi example:
+https://www.megunolink.com/articles/wireless/talk-esp32-over-wifi/
+
+Sharing Bluetooth and wifi:
+https://esp32.com/viewtopic.php?f=13&t=6707&start=30
+https://www.youtube.com/watch?v=-N52wL8xQzM
