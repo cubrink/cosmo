@@ -226,6 +226,10 @@ void loop() {
     ////////////////////////////////////////
     // Analog inputs
     
+    Serial.print((int16_t)roll);
+    Serial.print("\t");
+    Serial.print((int16_t)surge);
+    Serial.print("\t");
     Serial.print((int16_t)yaw);
     Serial.print("\t");
     Serial.println((int16_t)pitch);
