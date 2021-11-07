@@ -225,6 +225,10 @@ void loop() {
     ////       Send gamepad inputs      ////
     ////////////////////////////////////////
     // Analog inputs
+    
+    Serial.print((int16_t)yaw);
+    Serial.print("\t");
+    Serial.println((int16_t)pitch);
     gamepad.setLeftThumb((int16_t)roll, (int16_t)surge);
     gamepad.setRightThumb((int16_t)yaw, (int16_t)pitch);
     gamepad.sendReport();
@@ -271,6 +275,10 @@ void loop() {
       else if (motor_signal == MOTOR_CLOCKWISE) {
         digitalWrite(led_move_clockwise, HIGH);
         digitalWrite(led_move_counterclockwise, LOW);
+      }
+      else if (motor_signal == MOTOR_COUNTERCLOCKWISE) {
+        digitalWrite(led_move_clockwise, LOW);
+        digitalWrite(led_move_counterclockwise, HIGH);
       }
     }
     

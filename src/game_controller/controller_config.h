@@ -46,5 +46,5 @@ const uint16_t joy_deadzone_min = 1900;
 const uint16_t joy_deadzone_max = 2000;
 
 const int led_connection_status = 18;
-const int led_move_left = 5;
-const int led_move_right = 19;
+const int led_move_counterclockwise = 5;
+const int led_move_clockwise = 19;
