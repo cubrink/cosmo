@@ -25,9 +25,9 @@ const uint8_t motor_controller_address[] = {0x94, 0xB9, 0x7E, 0xE9, 0xA2, 0xE8};
 
 const int e_stop = 14;         // Red
 
-const int NUM_CONTROLLER_BUTTONS = 7;
+const int NUM_CONTROLLER_BUTTONS = 8;
 // Define button pins
-const int recalibrate_button = 12; // Black
+const int unknown_button = 12; // Black
 
 const int fast_travel = 17;    // Right white
 const int select_button = 4;   // Middle white
@@ -122,7 +122,7 @@ void setup() {
   ////////////////////////////////////
   //  Configure buttons/joysticks   //
   ////////////////////////////////////
-  pinMode(recalibrate_button, INPUT);
+  pinMode(unknown_button, INPUT);
   pinMode(e_stop, INPUT);
   pinMode(fast_travel, INPUT);
   pinMode(select_button, INPUT);
@@ -162,10 +162,6 @@ void loop() {
                                      // which will flag an emergency
   update_state();
   uint8_t motor_signal = MOTOR_STOP;
-
-  if (digitalRead(recalibrate_button)) {
-    mpu.calcOffsets();
-  }
   
   // Skip while gamepad is not connected or user e-stopped
   if (!emergency && gamepad.isConnected()) {
@@ -316,6 +312,7 @@ uint8_t read_buttons() {
     | (digitalRead(speed_down)      << 4)
     | (digitalRead(time_speed_up)   << 5)
     | (digitalRead(time_speed_down) << 6)
+    | (digitalRead(unknown_button)  << 7)
   );
 }
 
