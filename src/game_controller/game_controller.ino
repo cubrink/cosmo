@@ -3,58 +3,7 @@
 #include <WiFi.h>
 #include "Wire.h"
 #include <MPU6050_light.h>
-
-typedef struct  {
-  uint16_t _inline;
-  uint16_t _roll;
-  uint16_t _pitch;
-} analog_state_t;
-
-typedef struct {
-  double _roll;
-  double _omega; // Angular velocity of roll
-} orientation_t;
-
-#define MOTOR_STOP             0b00000000
-#define MOTOR_COUNTERCLOCKWISE 0b00000001
-#define MOTOR_CLOCKWISE        0b00000010
-#define MOTOR_IGNORE           0b10101010
-#define MOTOR_KILL             0b11111111
-
-const uint8_t motor_controller_address[] = {0x94, 0xB9, 0x7E, 0xE9, 0xA2, 0xE8};
-
-const int e_stop = 14;         // Red
-
-const int NUM_CONTROLLER_BUTTONS = 8;
-// Define button pins
-const int unknown_button = 12; // Black
-
-const int fast_travel = 17;    // Right white
-const int select_button = 4;   // Middle white
-const int toggle_mode = 16;    // Left white
-
-const int speed_up = 15;       // Green right
-const int speed_down = 2;      // Green left 
-const int time_speed_up = 26;  // Blue right
-const int time_speed_down = 27;// Blue left
-
-const int joy_left_unused = 34;
-const int joy_left_inline = 35;
-const int joy_right_roll = 36;
-const int joy_right_pitch = 39; 
-
-// SDA is GPIO21
-// SCL is GPIO22
-
-
-// Analog sticks normally idles at about 1950
-const uint16_t joy_deadzone_min = 1900;
-const uint16_t joy_deadzone_max = 2000;
-
-const int led_connection_status = 18;
-const int led_move_left = 5;
-const int led_move_right = 19;
-
+#include "controller_config.h"
 
 // Define button states
 uint8_t curr_state;
@@ -63,12 +12,14 @@ uint8_t changed;
 analog_state_t analog_state;
 orientation_t orientation;
 
+// Declare accelerometer and gamepad
+MPU6050 mpu(Wire);
+BleGamepad gamepad;
+
+// Declare values for sending motor signals
 const uint8_t motor_stop_count_threshold = 6;
 uint8_t motor_stop_count;
-MPU6050 mpu(Wire);
-unsigned long timer = 0;
 bool emergency;
-BleGamepad gamepad;
 
 uint8_t read_buttons();
 void update_state();
@@ -136,11 +87,11 @@ void setup() {
   pinMode(joy_right_roll, INPUT);
   pinMode(joy_right_pitch, INPUT);
   pinMode(led_connection_status, OUTPUT);
-  pinMode(led_move_left, OUTPUT);
-  pinMode(led_move_right, OUTPUT);
+  pinMode(led_move_counterclockwise, OUTPUT);
+  pinMode(led_move_clockwise, OUTPUT);
   digitalWrite(led_connection_status, LOW);
-  digitalWrite(led_move_left, LOW);
-  digitalWrite(led_move_right, LOW);
+  digitalWrite(led_move_counterclockwise, LOW);
+  digitalWrite(led_move_clockwise, LOW);
 
   // Initialize states to track the sensor values
   analog_state = {0, 0, 0};
@@ -149,6 +100,7 @@ void setup() {
   prev_state = 0;
   changed = 0;
 
+  // Initialize motor stop count
   motor_stop_count = 0;
 
   // flag set by pressing the e_stop button
@@ -162,27 +114,14 @@ void loop() {
                                      // which will flag an emergency
   update_state();
   uint8_t motor_signal = MOTOR_STOP;
+
+  // Set connection LED on if bluetooth is connected
+  digitalWrite(led_connection_status, gamepad.isConnected()); 
+
   
   // Skip while gamepad is not connected or user e-stopped
   if (!emergency && gamepad.isConnected()) {
-      // Handle button input
-      for (int i = 0; i < NUM_CONTROLLER_BUTTONS; i++) {
-          uint8_t button_code = (i+1);
-          uint8_t mask = (1 << i);
-        
-          if (!(changed & mask)) {
-            // This button hasn't changed, skip
-            continue;
-          }
-          if (mask & curr_state) {
-            // Button has been pressed
-            gamepad.press(button_code);
-          }
-          else {
-            // Button has been released
-            gamepad.release(button_code);
-          }
-      }
+      
 
     // Handle analog inputs
     int32_t surge = 0;
@@ -190,7 +129,10 @@ void loop() {
     int32_t pitch = 0;
     int32_t yaw = 0;
     
-    // Inline movement - nothing special
+
+    ////////////////////////////////////////
+    ////         Inline movement        ////
+    ////////////////////////////////////////
     if ((analog_state._inline > joy_deadzone_min) && (analog_state._inline < joy_deadzone_max)) {
       // If inside deadzone, set no movement on analog stick
       surge = 0;
@@ -200,14 +142,17 @@ void loop() {
       surge = analog_to_gamepad(analog_state._inline);
     }
     
-    // Handle roll
+
+    
+    ////////////////////////////////////////
+    ////           Roll movement        ////
+    ////////////////////////////////////////
     // Constraints on roll:
     //   When the cockpit is currently moving we do NOT want to reverse the direction of motors
     //  If the user indicates a roll in the opposite direction of rotation, then
     //    - Disable the motor so the cockpit stops spinning
     //    - Disable the gamepad rotation signal so the game stops rotating while the cockpit slows down
     //    - Once the cockpit has come to a stop, then accept gamepad signal and turn on motor
-    
     if ((analog_state._roll > joy_deadzone_min) && (analog_state._roll < joy_deadzone_max)) {
       // Inside deadzone, send nothing input
       roll = 0;
@@ -226,6 +171,7 @@ void loop() {
         roll = 0;
       }
       else {
+        // First determine which direction the user wants to roll
         if (roll > 0) {
           motor_signal = MOTOR_CLOCKWISE;
           roll = 32000;
@@ -237,6 +183,7 @@ void loop() {
         else if (roll == 0) {
           motor_signal = MOTOR_STOP;
         }
+        // Then determine if the user should roll
         if (!under_rotation_threshold) {
           if ((roll < 0) && (orientation._omega > 0)) {
             // User is trying to set direction opposite of motor
@@ -252,13 +199,12 @@ void loop() {
           }
         }  
       }
-      
-      
-      
-      
     }
     
-    // Handle pitch (and yaw, if player is rotated)
+    
+    ////////////////////////////////////////
+    ////       Pitch/yaw movement       ////
+    ////////////////////////////////////////
     if ((analog_state._pitch > joy_deadzone_min) && (analog_state._pitch < joy_deadzone_max)) {
       // Inside deadzone, send nothing input
       pitch = 0;
@@ -274,21 +220,57 @@ void loop() {
       pitch = cos(theta) * analog_magnitude;
     }
     
-
-    Serial.print(roll);
-    Serial.print("\t");
-    Serial.println(orientation._omega);
+    
+    ////////////////////////////////////////
+    ////       Send gamepad inputs      ////
+    ////////////////////////////////////////
+    // Analog inputs
     gamepad.setLeftThumb((int16_t)roll, (int16_t)surge);
     gamepad.setRightThumb((int16_t)yaw, (int16_t)pitch);
     gamepad.sendReport();
+
+    // Handle button input
+    for (int i = 0; i < NUM_CONTROLLER_BUTTONS; i++) {
+      uint8_t button_code = (i+1);
+      uint8_t mask = (1 << i);
     
+      if (!(changed & mask)) {
+        // This button hasn't changed, skip
+        continue;
+      }
+      if (mask & curr_state) {
+        // Button has been pressed
+        gamepad.press(button_code);
+      }
+      else {
+        // Button has been released
+        gamepad.release(button_code);
+      }
+    }
+
+
+    
+    ////////////////////////////////////////
+    //// Send motor controller inputs   ////
+    ////////////////////////////////////////
     if ((motor_signal == MOTOR_STOP) && (motor_stop_count < motor_stop_count_threshold)) {
+      // Increment count for how long the STOP signal has remained constant
+      // Sometimes while rolling, the signal drops, wait until a consistant signal
+      // before actually stopping
       motor_stop_count++;
     }
     else {
       esp_now_send(motor_controller_address, &motor_signal, sizeof(motor_signal));
       if (motor_signal == MOTOR_STOP) {
-        motor_stop_count = 0;  
+        // If STOP signal was sent, reset counter
+        motor_stop_count = 0;
+
+        digitalWrite(led_move_counterclockwise, LOW);
+        digitalWrite(led_move_clockwise, LOW);
+      }
+      else if (motor_signal == MOTOR_CLOCKWISE) {
+        digitalWrite(led_move_clockwise, HIGH);
+        digitalWrite(led_move_counterclockwise, LOW);
       }
     }
     
@@ -336,9 +318,9 @@ void read_analogs() {
 }
 
 void read_orientation() {
+  // Update the state of the orientation of the device
   orientation._roll = mpu.getAngleZ();
-  orientation._omega = mpu.getGyroZ(); // TODO: Adjust if different when mounting to controller;
- 
+  orientation._omega = mpu.getGyroZ(); 
 }
 
 int16_t analog_to_gamepad(uint16_t analog_value) {
@@ -347,7 +329,7 @@ int16_t analog_to_gamepad(uint16_t analog_value) {
   // converted
   //  - analog_value is from [0, 4095]
   //  - result value needs to be [-32767, 32767]
-  
+  // Note: Weird overflow happening with 32767. Just made it 32000 and moved on
   int32_t analog_range = 4095;
   int32_t gamepad_range = ((int32_t)32000 - (int32_t)-1*32000);
   int32_t gamepad_value = (((int32_t)analog_value * gamepad_range) / analog_range) + ((int32_t)-1*32000);
