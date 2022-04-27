@@ -1,5 +1,11 @@
 ![cosmo logo](/assets/cosmo_logo.png)
 
+#
+
+Devpost Submission: https://devpost.com/software/cosmo-qw79rc
+
+Project Video: https://www.youtube.com/watch?v=VRjiT6nPFoY
+
 ## Inspiration
 
 We heard that the theme this year was space and we wanted to go all out. This project was unique because we recruited a team for the hackathon that had a wide range of skills, from mechanical engineering all the way to computer science. After some brainstorming, we decided we wanted to build something that would require all of our skillsets and decided on an interactive space exploration simulator.
